@@ -296,6 +296,32 @@ export default {
       const tabs = this.$refs.tabs.$el.querySelector('.el-tabs__header');
       tabs && tabs.addEventListener('contextmenu', this.openContextMenu);
       tabs && tabs.addEventListener('mousewheel', this.wheelToggleTabs);
+      tabs && tabs.addEventListener('mousedown', this.middleClickCloseTab);
+      tabs && tabs.addEventListener('dblclick', this.dblClickCloseTab);
+    },
+    findTabNameByEvent(event) {
+      const items = this.$refs.tabs.$el.querySelectorAll('.el-tabs__header .el-tabs__item');
+
+      for (const item of items) {
+        if (item.contains(event.target)) {
+          return item.id.substr(4); // remove prefix "tab-"
+        }
+      }
+
+      return '';
+    },
+    middleClickCloseTab(event) {
+      if (event.button !== 1) {
+        return;
+      }
+
+      event.preventDefault();
+      const tabName = this.findTabNameByEvent(event);
+      tabName && this.removeTab(tabName);
+    },
+    dblClickCloseTab(event) {
+      const tabName = this.findTabNameByEvent(event);
+      tabName && this.removeTab(tabName);
     },
     wheelToggleTabs(event) {
       let index = this.tabs.findIndex(item => item.name === this.selectedTabName);
@@ -310,20 +336,8 @@ export default {
       this.selectedTabName = this.tabs[index].name;
     },
     openContextMenu(event) {
-      this.preTabId = '';
       this.hideAllMenus();
-
-      const items = this.$refs.tabs.$el.querySelectorAll('.el-tabs__header .el-tabs__item');
-
-      if (!items.length) {
-        return;
-      }
-
-      for (const item of items) {
-        if (item.contains(event.srcElement)) {
-          this.preTabId = item.id.substr(4); // remove prefix "tab-"
-        }
-      }
+      this.preTabId = this.findTabNameByEvent(event);
 
       if (!this.preTabId) {
         return;

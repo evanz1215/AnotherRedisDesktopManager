@@ -242,9 +242,7 @@ export default {
       }
 
       config = JSON.parse(config);
-      // remove all connections first
-      storage.setConnections({});
-      // close all connections
+      // close all connections before merging in the imported ones
       this.$bus.$emit('closeConnection');
       this.$bus.$emit('refreshConnections');
 

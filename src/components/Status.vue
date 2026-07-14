@@ -92,21 +92,21 @@
         <p class="server-status-tag-p">
           <el-tag class='server-status-container' type="info" size="big">
             {{ $t('message.connected_clients') }}:
-            <span class="server-status-text">{{this.connectionStatus.connected_clients}}</span>
+            <span class="server-status-text">{{formatNumber(connectionStatus.connected_clients)}}</span>
           </el-tag>
         </p>
 
         <p class="server-status-tag-p">
           <el-tag class='server-status-container' type="info" size="big">
             {{ $t('message.total_connections_received') }}:
-            <span class="server-status-text">{{this.connectionStatus.total_connections_received}}</span>
+            <span class="server-status-text">{{formatNumber(connectionStatus.total_connections_received)}}</span>
           </el-tag>
         </p>
 
         <p class="server-status-tag-p">
           <el-tag class='server-status-container' type="info" size="big">
             {{ $t('message.total_commands_processed') }}:
-            <span class="server-status-text">{{this.connectionStatus.total_commands_processed}}</span>
+            <span class="server-status-text">{{formatNumber(connectionStatus.total_commands_processed)}}</span>
           </el-tag>
         </p>
       </el-card>
@@ -284,6 +284,9 @@ export default {
     },
     sortByTTL(a, b) {
       return a.avg_ttl - b.avg_ttl;
+    },
+    formatNumber(value) {
+      return value === undefined ? '' : Number(value).toLocaleString();
     },
     initStatus(content) {
       if (!content) {

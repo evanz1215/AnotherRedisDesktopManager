@@ -180,6 +180,7 @@
     </el-form>
 
     <div slot="footer" class="dialog-footer">
+      <el-button :loading="testingConnection" @click="testConnection">{{ $t('message.test_connection') }}</el-button>
       <el-button @click="dialogVisible = false">{{ $t('el.messagebox.cancel') }}</el-button>
       <el-button type="primary" @click="editConnection">{{ $t('el.messagebox.confirm') }}</el-button>
     </div>
@@ -188,8 +189,11 @@
 
 <script type="text/javascript">
 import storage from '@/storage';
+import redisClient from '@/redisClient.js';
 import FileInput from '@/components/FileInput';
 import InputPassword from '@/components/InputPassword';
+
+const TEST_CONNECTION_TIMEOUT = 8000;
 
 export default {
   data() {
@@ -230,6 +234,7 @@ export default {
       sshOptionsShow: false,
       sslOptionsShow: false,
       sentinelOptionsShow: false,
+      testingConnection: false,
     };
   },
   components: { FileInput, InputPassword },
@@ -270,11 +275,13 @@ export default {
         this.connection = JSON.parse(JSON.stringify(this.connectionEmpty));
       }
     },
-    editConnection() {
+    // build a plain connection config object from the current form state
+    // returns null when the form combination is invalid
+    buildConfig() {
       const config = JSON.parse(JSON.stringify(this.connection));
 
       if (this.sentinelOptionsShow && config.cluster) {
-        return this.$message.error('Sentinel & Cluster cannot be checked together!');
+        return null;
       }
 
       !config.host && (config.host = '127.0.0.1');
@@ -292,11 +299,52 @@ export default {
         delete config.sentinelOptions;
       }
 
+      return config;
+    },
+    editConnection() {
+      const config = this.buildConfig();
+
+      if (!config) {
+        return this.$message.error('Sentinel & Cluster cannot be checked together!');
+      }
+
       const oldKey = storage.getConnectionKey(this.config);
       storage.editConnectionByKey(config, oldKey);
 
       this.dialogVisible = false;
       this.$emit('editConnectionFinished', config);
+    },
+    testConnection() {
+      const config = this.buildConfig();
+
+      if (!config) {
+        return this.$message.error('Sentinel & Cluster cannot be checked together!');
+      }
+
+      this.testingConnection = true;
+
+      const clientPromise = config.sshOptions
+        ? redisClient.createSSHConnection(
+          config.sshOptions, config.host, config.port, config.auth, config,
+        )
+        : redisClient.createConnection(config.host, config.port, config.auth, config);
+
+      const timeoutPromise = new Promise((_resolve, reject) => {
+        setTimeout(() => reject(new Error('Connection Timeout')), TEST_CONNECTION_TIMEOUT);
+      });
+
+      clientPromise
+        .then(client => Promise.race([client.ping(), timeoutPromise]).then(() => client))
+        .then((client) => {
+          this.$message.success(this.$t('message.test_connection_success'));
+          client.disconnect();
+        })
+        .catch((error) => {
+          this.$message.error(this.$t('message.test_connection_failed', { msg: error.message }));
+        })
+        .finally(() => {
+          this.testingConnection = false;
+        });
     },
   },
   mounted() {

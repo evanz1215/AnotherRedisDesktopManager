@@ -1,5 +1,5 @@
 <template>
-  <div ref="treeWrapper" class='key-list-vtree'>
+  <div ref="treeWrapper" class='key-list-vtree' :class="{ 'key-list-vtree-empty': !keyNodes.length }">
     <!-- multi operate -->
     <div class="batch-operate">
       <div class="fixed-col">
@@ -25,7 +25,7 @@
       ref="veTree"
       node-key="key"
       :show-checkbox='multiOperating'
-      :height="vtreeHeight"
+      :height="keyNodes.length ? vtreeHeight : vtreeHeightEmpty"
       :data="keyNodes"
       :props="props"
       :indent=10
@@ -86,6 +86,7 @@ export default {
       vtreeHeight: 0,
       vtreeHeightRaw: 'calc(100vh - 248px)',
       vtreeHeightMutiple: 'calc(100vh - 284px)',
+      vtreeHeightEmpty: '60px',
       treeNodesOverflow: 20e4, // 200k
       keyNodes: [],
       props: {
@@ -435,6 +436,9 @@ export default {
 <style>
 .key-list-vtree {
   height: calc(100vh - 250px);
+}
+.key-list-vtree.key-list-vtree-empty {
+  height: auto;
 }
 /*vtree container*/
 .key-list-vtree .vue-recycle-scroller {

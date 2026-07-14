@@ -3,12 +3,13 @@
     <div>
       <!-- new connection button -->
       <div class="aside-top-container">
-        <el-button class='aside-setting-btn' type="primary" icon="el-icon-time" @click="$refs.commandLogDialog.show()" :title='$t("message.command_log")+" Ctrl+g"' plain></el-button>
-        <el-button class='aside-setting-btn' type="primary" icon="el-icon-setting" @click="$refs.settingDialog.show()" :title='$t("message.settings")+" Ctrl+,"' plain></el-button>
-
         <div class="aside-new-connection-container">
           <el-button class="aside-new-connection-btn" type="info" @click="addNewConnection" icon="el-icon-circle-plus" :title='$t("message.new_connection")+" Ctrl+n"'>{{ $t('message.new_connection') }}</el-button>
         </div>
+
+        <el-button class='aside-setting-btn' type="primary" icon="el-icon-folder-add" @click="addNewGroup" :title='$t("message.new_group")' plain></el-button>
+        <el-button class='aside-setting-btn' type="primary" icon="el-icon-setting" @click="$refs.settingDialog.show()" :title='$t("message.settings")+" Ctrl+,"' plain></el-button>
+        <el-button class='aside-setting-btn' type="primary" icon="el-icon-time" @click="$refs.commandLogDialog.show()" :title='$t("message.command_log")+" Ctrl+g"' plain></el-button>
       </div>
 
       <!-- new connection dialog -->
@@ -16,6 +17,9 @@
         @editConnectionFinished="editConnectionFinished"
         ref="newConnectionDialog">
       </NewConnectionDialog>
+
+      <!-- new folder dialog -->
+      <GroupDialog ref="newGroupDialog"></GroupDialog>
 
       <!-- user settings -->
       <Setting ref="settingDialog"></Setting>
@@ -37,6 +41,7 @@
 import Setting from '@/components/Setting';
 import Connections from '@/components/Connections';
 import NewConnectionDialog from '@/components/NewConnectionDialog';
+import GroupDialog from '@/components/GroupDialog';
 import CommandLog from '@/components/CommandLog';
 import HotKeys from '@/components/HotKeys';
 import CustomFormatter from '@/components/CustomFormatter';
@@ -46,7 +51,7 @@ export default {
     return {};
   },
   components: {
-    Connections, NewConnectionDialog, Setting, CommandLog, HotKeys, CustomFormatter,
+    Connections, NewConnectionDialog, GroupDialog, Setting, CommandLog, HotKeys, CustomFormatter,
   },
   methods: {
     editConnectionFinished() {
@@ -54,6 +59,9 @@ export default {
     },
     addNewConnection() {
       this.$refs.newConnectionDialog.show();
+    },
+    addNewGroup() {
+      this.$refs.newGroupDialog.show();
     },
     initShortcut() {
       // new connection
@@ -86,9 +94,13 @@ export default {
 <style type="text/css">
   .aside-top-container {
     margin-right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
   .aside-top-container .aside-new-connection-container {
-    margin-right: 109px;
+    flex: 1 1 auto;
+    min-width: 0;
   }
   .aside-new-connection-container .aside-new-connection-btn {
     width: 100%;
@@ -96,9 +108,9 @@ export default {
     text-overflow: ellipsis;
   }
   .aside-top-container .aside-setting-btn {
-    float: right;
+    flex: 0 0 auto;
     width: 44px;
-    margin-right: 5px;
+    margin-right: 0;
   }
 
   .dark-mode .aside-top-container .el-button--info {

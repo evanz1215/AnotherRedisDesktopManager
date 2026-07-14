@@ -20,6 +20,7 @@
       @keyup.enter.native="consoleExec"
       @keyup.up.native="searchUp"
       @keyup.down.native="searchDown">
+      <i v-if="inputSuggestionItems.length" slot="suffix" class="el-input__icon el-icon-delete clear-history" @click="clearHistory"></i>
     </el-autocomplete>
 
     <!-- stop sub\monitor btn -->
@@ -423,6 +424,11 @@ export default {
       const key = this.$storage.getStorageKeyByName('cli_tip', this.client.options.connectionName);
       localStorage.setItem(key, JSON.stringify(this.inputSuggestionItems.slice(-200)));
     },
+    clearHistory() {
+      this.inputSuggestionItems = [];
+      this.historyIndex = 0;
+      this.storeCommandTips();
+    },
   },
   mounted() {
     this.initShow();
@@ -456,6 +462,14 @@ export default {
 
   .tab-cli .input-suggestion input::-webkit-input-placeholder {
     color: #8a8b8e;
+  }
+
+  .tab-cli .input-suggestion .clear-history {
+    cursor: pointer;
+    color: #a5a8ad;
+  }
+  .tab-cli .input-suggestion .clear-history:hover {
+    color: #6895ee;
   }
 
   .tab-cli .stop-subscribe {

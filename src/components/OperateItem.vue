@@ -65,6 +65,8 @@
         :trigger-on-focus="false"
         :select-when-unmatched='true'>
         <template slot="suffix">
+          <!-- clear search -->
+          <i v-if="searchMatch" class="el-input__icon search-icon el-icon-circle-close" @click="clearSearch()"></i>
           <!-- cancel search -->
           <i v-if="(searchIcon=='el-icon-loading') && showCancelIcon" class="el-input__icon search-icon el-icon-error" @click="cancelSearch()" :title="$t('el.messagebox.cancel')"></i>
           <!-- start search -->
@@ -382,6 +384,10 @@ export default {
       const key = this.$storage.getStorageKeyByName('search_tip', this.config.name);
       localStorage.setItem(key, JSON.stringify(Array.from(this.searchHistory).slice(-200)));
     },
+    clearSearch() {
+      this.searchMatch = '';
+      this.changeMatchMode();
+    },
     cancelSearch() {
       // stop scanning in keyList
       this.$parent.$parent.$parent.$refs.keyList.cancelScanning();
@@ -433,7 +439,7 @@ export default {
     width: 100%;
   }
   .connection-menu .search-input .el-input__inner {
-    padding-right: 62px;
+    padding-right: 82px;
     /*margin-top: -10px;;
     margin-bottom: 15px;*/
   }

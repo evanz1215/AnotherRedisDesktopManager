@@ -115,7 +115,7 @@ export default {
       dbsCopy: [0],
       selectedDbIndex: 0,
       searchMatch: '',
-      searchExact: false,
+      searchExact: true,
       searchIcon: 'el-icon-search',
       searchHistory: new Set(),
       searchDebounce: 100,
@@ -221,7 +221,7 @@ export default {
       this.dbs = [0];
       // this.selectedDbIndex = 0;
       this.searchMatch = '';
-      this.searchExact = false;
+      this.searchExact = true;
     },
     changeDb(dbIndex = false) {
       if (dbIndex !== false) {

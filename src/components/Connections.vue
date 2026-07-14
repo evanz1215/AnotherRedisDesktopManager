@@ -154,14 +154,21 @@ export default {
           if (movedItem.type === 'group') {
             newParentId = undefined;
           } else {
+            // items has not had movedItem re-inserted yet, so items[newIndex-1]
+            // and items[newIndex] are exactly its future prev/next neighbors
             const prevItem = items[newIndex - 1];
+            const nextItem = items[newIndex];
 
-            if (!prevItem) {
-              newParentId = undefined;
-            } else if (prevItem.type === 'group') {
+            if (prevItem && prevItem.type === 'group') {
+              // dropped right after a header - becomes its first child
               newParentId = prevItem.key;
-            } else {
+            } else if (nextItem && nextItem.type === 'group') {
+              // dropped right before another header - stays at root
+              newParentId = undefined;
+            } else if (prevItem) {
               newParentId = prevItem.parentId;
+            } else {
+              newParentId = undefined;
             }
           }
 

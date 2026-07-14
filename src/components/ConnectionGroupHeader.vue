@@ -1,8 +1,8 @@
 <template>
-<div class="connection-group-header">
+<div class="connection-group-header" :data-group-key="config.key">
   <div class="group-drag-handle group-title-row" @click="$emit('toggle')">
     <i class="group-expand-icon el-icon-arrow-right" :class="{ 'is-expanded': !collapsed }"></i>
-    <i class="group-folder-icon" :class="collapsed ? 'el-icon-folder' : 'el-icon-folder-opened'"></i>
+    <i class="group-folder-icon fa" :class="folderIconClass" :style="{ color: config.color }"></i>
     <span class="group-name" :title="config.name">{{config.name}}</span>
     <span class="group-count">{{childCount}}</span>
   </div>
@@ -11,8 +11,8 @@
     <el-dropdown placement="bottom-start" :show-timeout=100 :hide-timeout=300>
       <i class="connection-right-icon el-icon-more" @click.stop></i>
       <el-dropdown-menu slot="dropdown">
-        <el-dropdown-item @click.native="renameGroup">
-          <span><i class="more-operate-ico el-icon-edit-outline"></i>&nbsp;{{ $t('message.rename_group') }}</span>
+        <el-dropdown-item @click.native="$refs.editGroupDialog.show()">
+          <span><i class="more-operate-ico el-icon-edit-outline"></i>&nbsp;{{ $t('message.edit_group') }}</span>
         </el-dropdown-item>
         <el-dropdown-item @click.native="deleteGroup">
           <span><i class="more-operate-ico el-icon-delete"></i>&nbsp;{{ $t('message.del_group') }}</span>
@@ -20,25 +20,30 @@
       </el-dropdown-menu>
     </el-dropdown>
   </div>
+
+  <!-- edit folder dialog -->
+  <GroupDialog editMode='true' :config='config' ref='editGroupDialog'></GroupDialog>
 </div>
 </template>
 
 <script type="text/javascript">
 import storage from '@/storage.js';
+import GroupDialog from '@/components/GroupDialog';
 
 export default {
   props: ['config', 'childCount', 'collapsed'],
-  methods: {
-    renameGroup() {
-      this.$prompt(this.$t('message.new_group_prompt'), { inputValue: this.config.name }).then(({ value }) => {
-        if (!value) {
-          return;
-        }
+  components: { GroupDialog },
+  computed: {
+    folderIconClass() {
+      // custom icon stays fixed; the arrow already conveys expand/collapse
+      if (this.config.icon) {
+        return this.config.icon;
+      }
 
-        storage.renameGroup(this.config.key, value);
-        this.$bus.$emit('refreshConnections');
-      }).catch(() => {});
+      return this.collapsed ? 'fa-folder' : 'fa-folder-open';
     },
+  },
+  methods: {
     deleteGroup() {
       this.$confirm(
         this.$t('message.confirm_delete_group'),
@@ -70,6 +75,10 @@ export default {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: #292f31;
+  }
+  .dark-mode .connection-group-header .group-title-row {
+    color: #f7f7f7;
   }
   .connection-group-header .group-expand-icon {
     display: inline-block;

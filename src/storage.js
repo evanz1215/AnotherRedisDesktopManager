@@ -120,7 +120,7 @@ export default {
     this.hookAfterDelConnection(connection);
     this.setConnections(connections);
   },
-  addGroup(name) {
+  addGroup(name, color, icon) {
     const connections = this.getConnections();
     const rootItems = Object.values(connections).filter(item => !item.parentId);
     const maxOrder = Math.max(...rootItems.map(item => (!isNaN(item.order) ? item.order : 0)));
@@ -129,6 +129,8 @@ export default {
       key: `group_${new Date().getTime()}_${randomString(5)}`,
       type: 'group',
       name,
+      color,
+      icon,
       order: (maxOrder > 0 ? maxOrder : 0) + 1,
     };
 
@@ -136,16 +138,6 @@ export default {
     this.setConnections(connections);
 
     return group;
-  },
-  renameGroup(key, name) {
-    const connections = this.getConnections();
-
-    if (!connections[key]) {
-      return;
-    }
-
-    connections[key].name = name;
-    this.setConnections(connections);
   },
   deleteGroup(key) {
     const connections = this.getConnections();

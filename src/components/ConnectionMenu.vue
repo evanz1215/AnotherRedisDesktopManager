@@ -39,6 +39,18 @@
           <span><i class='more-operate-ico fa fa-clone'></i>&nbsp;{{ $t('message.duplicate_connection') }}</span>
         </el-dropdown-item>
 
+        <!-- move to folder -->
+        <el-dropdown-item v-if="config.parentId" @click.native='moveToGroup(undefined)' divided>
+          <span><i class='more-operate-ico el-icon-remove-outline'></i>&nbsp;{{ $t('message.ungroup_connection') }}</span>
+        </el-dropdown-item>
+        <el-dropdown-item
+          v-for="(group, index) in availableGroups"
+          :key="group.key"
+          @click.native='moveToGroup(group.key)'
+          :divided="!config.parentId && index === 0">
+          <span><i class='more-operate-ico el-icon-folder'></i>&nbsp;{{ $t('message.move_to_group') }}: {{group.name}}</span>
+        </el-dropdown-item>
+
         <!-- menu color picker -->
         <el-tooltip placement="right" effect="light">
           <el-color-picker
@@ -100,6 +112,12 @@ export default {
   },
   props: ['config', 'client'],
   components: { NewConnectionDialog },
+  computed: {
+    availableGroups() {
+      return storage.getConnections(true)
+        .filter(item => item.type === 'group' && item.key !== this.config.parentId);
+    },
+  },
   created() {
     this.$bus.$on('duplicateConnection', (newConfig) => {
       // not self
@@ -187,6 +205,10 @@ export default {
       setTimeout(() => {
         this.$bus.$emit('duplicateConnection', newConfig);
       }, 100);
+    },
+    moveToGroup(groupKey) {
+      storage.editConnectionItem(this.config, { parentId: groupKey });
+      this.$bus.$emit('refreshConnections');
     },
     deleteConnection() {
       this.$confirm(

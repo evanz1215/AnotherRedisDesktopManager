@@ -70,9 +70,10 @@ export default {
     connection.key = newKey;
 
     // new added has no order, add it. do not add when edit mode
+    // order is scoped to siblings sharing the same parentId (root level or same folder)
     if (!oldKey && isNaN(connection.order)) {
-      // connection.order = Object.keys(connections).length;
-      const maxOrder = Math.max(...Object.values(connections).map(item => (!isNaN(item.order) ? item.order : 0)));
+      const siblings = Object.values(connections).filter(item => (item.parentId || '') === (connection.parentId || ''));
+      const maxOrder = Math.max(...siblings.map(item => (!isNaN(item.order) ? item.order : 0)));
       connection.order = (maxOrder > 0 ? maxOrder : 0) + 1;
     }
 
@@ -119,6 +120,46 @@ export default {
     this.hookAfterDelConnection(connection);
     this.setConnections(connections);
   },
+  addGroup(name) {
+    const connections = this.getConnections();
+    const rootItems = Object.values(connections).filter(item => !item.parentId);
+    const maxOrder = Math.max(...rootItems.map(item => (!isNaN(item.order) ? item.order : 0)));
+
+    const group = {
+      key: `group_${new Date().getTime()}_${randomString(5)}`,
+      type: 'group',
+      name,
+      order: (maxOrder > 0 ? maxOrder : 0) + 1,
+    };
+
+    connections[group.key] = group;
+    this.setConnections(connections);
+
+    return group;
+  },
+  renameGroup(key, name) {
+    const connections = this.getConnections();
+
+    if (!connections[key]) {
+      return;
+    }
+
+    connections[key].name = name;
+    this.setConnections(connections);
+  },
+  deleteGroup(key) {
+    const connections = this.getConnections();
+    delete connections[key];
+
+    // ungroup children back to root level, do not delete them
+    for (const connKey in connections) {
+      if (connections[connKey].parentId === key) {
+        delete connections[connKey].parentId;
+      }
+    }
+
+    this.setConnections(connections);
+  },
   getConnectionKey(connection, forceUnique = false) {
     if (Object.keys(connection).length === 0) {
       return '';
@@ -149,13 +190,18 @@ export default {
       return a.key ? 1 : (b.key ? -1 : 0);
     });
   },
-  reOrderAndStore(connections = []) {
+  // items must be the full flat list (all connections + groups), each already
+  // carrying its current parentId; order is recomputed per parentId bucket
+  reOrderAndStore(items = []) {
+    const orderCounters = {};
     const newConnections = {};
 
-    for (const index in connections) {
-      const connection = connections[index];
-      connection.order = parseInt(index);
-      newConnections[this.getConnectionKey(connection, true)] = connection;
+    for (const item of items) {
+      const bucket = item.parentId || '';
+      orderCounters[bucket] = orderCounters[bucket] || 0;
+      item.order = orderCounters[bucket]++;
+
+      newConnections[this.getConnectionKey(item, true)] = item;
     }
 
     this.setConnections(newConnections);

@@ -5,6 +5,7 @@
       <div class="aside-top-container">
         <el-button class='aside-setting-btn' type="primary" icon="el-icon-time" @click="$refs.commandLogDialog.show()" :title='$t("message.command_log")+" Ctrl+g"' plain></el-button>
         <el-button class='aside-setting-btn' type="primary" icon="el-icon-setting" @click="$refs.settingDialog.show()" :title='$t("message.settings")+" Ctrl+,"' plain></el-button>
+        <el-button class='aside-setting-btn' type="primary" icon="el-icon-folder-add" @click="addNewGroup" :title='$t("message.new_group")' plain></el-button>
 
         <div class="aside-new-connection-container">
           <el-button class="aside-new-connection-btn" type="info" @click="addNewConnection" icon="el-icon-circle-plus" :title='$t("message.new_connection")+" Ctrl+n"'>{{ $t('message.new_connection') }}</el-button>
@@ -55,6 +56,16 @@ export default {
     addNewConnection() {
       this.$refs.newConnectionDialog.show();
     },
+    addNewGroup() {
+      this.$prompt(this.$t('message.new_group_prompt')).then(({ value }) => {
+        if (!value) {
+          return;
+        }
+
+        this.$storage.addGroup(value);
+        this.$refs.connections.initConnections();
+      }).catch(() => {});
+    },
     initShortcut() {
       // new connection
       this.$shortcut.bind('ctrl+n, ⌘+n', () => {
@@ -88,7 +99,7 @@ export default {
     margin-right: 8px;
   }
   .aside-top-container .aside-new-connection-container {
-    margin-right: 109px;
+    margin-right: 158px;
   }
   .aside-new-connection-container .aside-new-connection-btn {
     width: 100%;

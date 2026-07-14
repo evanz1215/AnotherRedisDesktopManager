@@ -13,13 +13,23 @@
 
     <!-- connections list -->
     <div class="connections-list">
-      <ConnectionWrapper
-        v-for="item, index of filteredConnections"
-        :key="item.key ? item.key : item.connectionName"
-        :index="index"
-        :globalSettings="globalSettings"
-        :config='item'>
-      </ConnectionWrapper>
+      <template v-for="item of displayItems">
+        <ConnectionGroupHeader
+          v-if="item.type === 'group'"
+          :key="item.key"
+          :config='item'
+          :childCount="groupChildCount(item.key)"
+          :collapsed="collapsedGroups.has(item.key)"
+          @toggle="toggleGroup(item.key)">
+        </ConnectionGroupHeader>
+        <ConnectionWrapper
+          v-else
+          v-show="!isHiddenByCollapsedGroup(item)"
+          :key="item.key ? item.key : item.connectionName"
+          :globalSettings="globalSettings"
+          :config='item'>
+        </ConnectionWrapper>
+      </template>
     </div>
 
     <ScrollToTop parentNum='1' :posRight='false'></ScrollToTop>
@@ -29,6 +39,7 @@
 <script type="text/javascript">
 import storage from '@/storage.js';
 import ConnectionWrapper from '@/components/ConnectionWrapper';
+import ConnectionGroupHeader from '@/components/ConnectionGroupHeader';
 import ScrollToTop from '@/components/ScrollToTop';
 import Sortable from 'sortablejs';
 
@@ -40,9 +51,10 @@ export default {
       globalSettings: this.$storage.getSetting(),
       filterEnableNum: 4,
       filterMode: '',
+      collapsedGroups: new Set(),
     };
   },
-  components: { ConnectionWrapper, ScrollToTop },
+  components: { ConnectionWrapper, ConnectionGroupHeader, ScrollToTop },
   created() {
     this.$bus.$on('refreshConnections', () => {
       this.initConnections();
@@ -52,14 +64,40 @@ export default {
     });
   },
   computed: {
-    filteredConnections() {
-      if (!this.filterMode) {
-        return this.connections;
+    // single flat list: root-level items (folders + ungrouped connections) in
+    // order, with each folder's children spliced in right after it. This is
+    // the ONLY list SortableJS drags within, so moving a connection in/out of
+    // a folder is always a same-list reorder and never remounts a live session
+    displayItems() {
+      if (this.filterMode) {
+        const keyword = this.filterMode.toLowerCase();
+
+        return this.connections.filter(item => {
+          return item.type !== 'group' && item.name.toLowerCase().includes(keyword);
+        });
       }
 
-      return this.connections.filter(item => {
-        return item.name.toLowerCase().includes(this.filterMode.toLowerCase());
-      });
+      const roots = this.connections
+        .filter(item => !item.parentId)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+      const items = [];
+
+      for (const item of roots) {
+        items.push(item);
+
+        if (item.type !== 'group') {
+          continue;
+        }
+
+        const children = this.connections
+          .filter(child => child.parentId === item.key)
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        items.push(...children);
+      }
+
+      return items;
     },
   },
   methods: {
@@ -69,28 +107,69 @@ export default {
       // this.connections = [];
 
       for (const item of connections) {
-        item.connectionName = storage.getConnectionName(item);
-        // fix history bug, prevent db into config
-        delete item.db;
+        // groups have no host/port, only real connections need this
+        if (item.type !== 'group') {
+          item.connectionName = storage.getConnectionName(item);
+          // fix history bug, prevent db into config
+          delete item.db;
+        }
+
         slovedConnections.push(item);
       }
 
       this.connections = slovedConnections;
     },
+    groupChildCount(key) {
+      return this.connections.filter(item => item.parentId === key).length;
+    },
+    isHiddenByCollapsedGroup(item) {
+      return !!(item.parentId && this.collapsedGroups.has(item.parentId));
+    },
+    toggleGroup(key) {
+      this.collapsedGroups.has(key) ? this.collapsedGroups.delete(key) : this.collapsedGroups.add(key);
+      // Set mutations aren't reactive in Vue2, force a new reference
+      this.collapsedGroups = new Set(this.collapsedGroups);
+    },
     sortOrder() {
       const dragWrapper = document.querySelector('.connections-list');
       Sortable.create(dragWrapper, {
-        handle: '.el-submenu__title',
+        handle: '.el-submenu__title, .group-drag-handle',
         animation: 400,
         direction: 'vertical',
         onEnd: (e) => {
-          const { newIndex } = e;
-          const { oldIndex } = e;
-          // change in connections
-          const currentRow = this.connections.splice(oldIndex, 1)[0];
-          this.connections.splice(newIndex, 0, currentRow);
-          // store
-          this.$storage.reOrderAndStore(this.connections);
+          // displayItems is a filtered subset while searching; reordering it
+          // would wipe every non-matching connection out of storage. Bail out
+          // and snap the DOM back to the persisted order instead.
+          if (this.filterMode) {
+            return this.initConnections();
+          }
+
+          const { newIndex, oldIndex } = e;
+          const items = this.displayItems.slice();
+          const [movedItem] = items.splice(oldIndex, 1);
+
+          let newParentId;
+
+          // folders are single-level only, always stay at root
+          if (movedItem.type === 'group') {
+            newParentId = undefined;
+          } else {
+            const prevItem = items[newIndex - 1];
+
+            if (!prevItem) {
+              newParentId = undefined;
+            } else if (prevItem.type === 'group') {
+              newParentId = prevItem.key;
+            } else {
+              newParentId = prevItem.parentId;
+            }
+          }
+
+          movedItem.parentId = newParentId;
+          items.splice(newIndex, 0, movedItem);
+
+          this.$storage.reOrderAndStore(items);
+          this.initConnections();
         },
       });
     },

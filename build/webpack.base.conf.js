@@ -1,5 +1,6 @@
 'use strict'
 const path = require('path')
+const webpack = require('webpack')
 const utils = require('./utils')
 const config = require('../config')
 const vueLoaderConfig = require('./vue-loader.conf')
@@ -106,5 +107,11 @@ module.exports = {
     net: 'empty',
     tls: 'empty',
     child_process: 'empty'
-  }
+  },
+  plugins: [
+    // ssh2's optional native crypto binding is wrapped in try/catch and falls
+    // back to pure JS at runtime when absent. Skip it here so a missing
+    // prebuilt binary (e.g. no node-gyp toolchain) doesn't fail the build.
+    new webpack.IgnorePlugin(/build[\\/]Release[\\/]sshcrypto\.node$/, /ssh2[\\/]lib[\\/]protocol[\\/]crypto$/)
+  ]
 }

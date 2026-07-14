@@ -74,7 +74,7 @@
 
           <!-- extract search -->
           <el-tooltip effect="dark" :content="$t('message.exact_search')" placement="bottom">
-            <el-checkbox v-model="searchExact"></el-checkbox>
+            <el-checkbox v-model="searchExact" @change="changeMatchMode"></el-checkbox>
           </el-tooltip>
         </template>
       </el-autocomplete>

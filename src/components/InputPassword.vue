@@ -1,6 +1,6 @@
 <template>
   <el-input :value="value" @input="handleInput" :type="inputType" :placeholder="placeholder">
-    <i v-if="!hidepass" ref="toggler" slot="suffix" class="toggler el-icon-view" @click="togglePassword"></i>
+    <i v-if="!hidepass" slot="suffix" class="toggler fa" :class="togglerIconClass" @click="togglePassword"></i>
   </el-input>
 </template>
 
@@ -13,6 +13,12 @@ export default {
     };
   },
   props: ['value', 'placeholder', 'hidepass'],
+  computed: {
+    // eye = hidden (click to reveal), eye-slash = revealed (click to hide)
+    togglerIconClass() {
+      return this.inputType == 'password' ? 'fa-eye' : 'fa-eye-slash toggler-active';
+    },
+  },
   methods: {
     handleInput(newValue) {
       this.$emit('input', newValue);
@@ -20,14 +26,9 @@ export default {
     togglePassword() {
       clearTimeout(this.recoverTimer);
 
-      if (!this.$refs.toggler) {
-        return;
-      }
-
       // show text
       if (this.inputType == 'password') {
         this.inputType = 'text';
-        this.$refs.toggler.classList.add('toggler-text');
 
         // set time to hide text
         this.recoverTimer = setTimeout(() => {
@@ -38,7 +39,6 @@ export default {
       // back to password
       else {
         this.inputType = 'password';
-        this.$refs.toggler.classList.remove('toggler-text');
       }
     },
   },
@@ -51,13 +51,12 @@ export default {
 <style type="text/css" scoped>
   .toggler {
     cursor: pointer;
-    font-weight: bold;
     margin-right: 4px;
   }
   .toggler:hover {
     color: #6895ee;
   }
-  .toggler.toggler-text {
+  .toggler.toggler-active {
     color: #6895ee;
   }
 </style>

@@ -10,7 +10,7 @@
           </el-form-item>
 
           <el-form-item :label="$t('message.password')">
-            <InputPassword v-model="connection.auth" placeholder="Auth"></InputPassword>
+            <InputPassword v-model="connection.auth" :key="passwordResetKey" placeholder="Auth"></InputPassword>
           </el-form-item>
 
           <el-form-item :label="$t('message.connection_name')">
@@ -91,7 +91,7 @@
           </el-form-item>
 
           <el-form-item label="Passphrase">
-            <InputPassword v-model="connection.sshOptions.passphrase" placeholder='Passphrase for Private Key'></InputPassword>
+            <InputPassword v-model="connection.sshOptions.passphrase" :key="passwordResetKey" placeholder='Passphrase for Private Key'></InputPassword>
           </el-form-item>
         </el-col>
 
@@ -102,7 +102,7 @@
           </el-form-item>
 
           <el-form-item :label="$t('message.password')">
-            <InputPassword v-model="connection.sshOptions.password" placeholder="SSH Password"></InputPassword>
+            <InputPassword v-model="connection.sshOptions.password" :key="passwordResetKey" placeholder="SSH Password"></InputPassword>
           </el-form-item>
 
           <el-form-item :label="$t('message.timeout')">
@@ -166,7 +166,7 @@
         <!-- left col -->
         <el-col :span=12>
           <el-form-item :label="$t('message.redis_node_password')">
-            <InputPassword v-model="connection.sentinelOptions.nodePassword" placeholder='Redis Node Password'></InputPassword>
+            <InputPassword v-model="connection.sentinelOptions.nodePassword" :key="passwordResetKey" placeholder='Redis Node Password'></InputPassword>
           </el-form-item>
         </el-col>
 
@@ -235,6 +235,8 @@ export default {
       sslOptionsShow: false,
       sentinelOptionsShow: false,
       testingConnection: false,
+      // bump to force-remount InputPassword fields so they always start hidden
+      passwordResetKey: 0,
     };
   },
   components: { FileInput, InputPassword },
@@ -258,6 +260,8 @@ export default {
       this.resetFields();
     },
     resetFields() {
+      this.passwordResetKey++;
+
       // edit connection mode
       if (this.editMode) {
         this.sshOptionsShow = !!this.config.sshOptions;
